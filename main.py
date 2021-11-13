@@ -68,7 +68,7 @@ def check_args() -> None:
         settings['fn'] = os.path.join(os.getcwd(), settings['fn'])
 
 
-def make_dir() -> None:
+def make_dir() -> list:
     base_fn = os.path.basename(settings['fn'])
     dir_fn = os.path.dirname(settings['fn'])
     ext_fn = base_fn.lower().strip().split('.')[-1]
@@ -81,12 +81,23 @@ def make_dir() -> None:
             if input_ == 'n':
                 sys.exit(0)
             if input_ == 'y':
-                shutil.rmtree(out_dir)
                 break
+        try:
+            shutil.rmtree(out_dir)
+        except Exception as err_:
+            print(f'[red]Error - Can\'t Remove Folder "{out_dir}": {err_}!')
+            sys.exit(1)
     os.mkdir(out_dir)
+    return [
+        base_fn,
+        dir_fn,
+        ext_fn,
+        no_ext_fn,
+        out_dir
+    ]
 
 
-def split() -> None:
+def split(sets_list: list) -> None:
     skipped_times = 0
     compressed_bytes = 0
     
@@ -109,7 +120,7 @@ def split() -> None:
                     can_write = False
                     skipped_times += 1
             if can_write:
-                f_ = open(os.path.join(out_dir, f'{no_ext_fn}-{i}.{ext_fn}'), 'wb')
+                f_ = open(os.path.join(sets_list[4], f'{sets_list[3]}-{i}.{sets_list[2]}'), 'wb')
                 f_.write(current_bytes)
                 f_.close()
             i += settings['step']
@@ -123,15 +134,14 @@ def split() -> None:
     
     if settings['compress']:
         print(f'[cyan]Compressor Skipped {skipped_times} Times.')
-        print(f'[cyan]Total Compressed: {(skipped_times * settings["step"] + compressed_bytes) / 1000}KB.')
-        print(f'[cyan]Total Size: {(length - skipped_times * settings["step"] - compressed_bytes) / 1000}KB.')
+        print(f'[cyan]Total Compressed: {(skipped_times * settings["step"] + compressed_bytes) / 1000} KB.')
+        print(f'[cyan]Total Size: {(length - skipped_times * settings["step"] - compressed_bytes) / 1000} KB.')
 
 
 def main() -> None:
     parse_args()
     check_args()
-    make_dir()
-    split()
+    split(make_dir())
 
 
 if __name__ == '__main__':
