@@ -84,8 +84,11 @@ def make_dir() -> None:
                 shutil.rmtree(out_dir)
                 break
     os.mkdir(out_dir)
-    
+
+
+def split() -> None:
     skipped_times = 0
+    compressed_bytes = 0
     
     launch_time = time.time()
     file = open(settings['fn'], 'rb')
@@ -98,7 +101,11 @@ def make_dir() -> None:
             current_bytes = file.read(settings['step'])
             can_write = True
             if settings['compress']:
-                if not current_bytes.replace(b'\x00', b''):
+                if current_bytes.replace(b'\x00', b''):
+                    while current_bytes.endswith(b'\x00'):
+                        current_bytes = current_bytes[:-1]
+                        compressed_bytes += 1
+                else:
                     can_write = False
                     skipped_times += 1
             if can_write:
@@ -116,10 +123,8 @@ def make_dir() -> None:
     
     if settings['compress']:
         print(f'[cyan]Compressor Skipped {skipped_times} Times.')
-
-
-def split() -> None:
-    pass
+        print(f'[cyan]Total Compressed: {(skipped_times * settings["step"] + compressed_bytes) / 1000}KB.')
+        print(f'[cyan]Total Size: {(length - skipped_times * settings["step"] - compressed_bytes) / 1000}KB.')
 
 
 def main() -> None:
